@@ -54,6 +54,8 @@ button{font-family:inherit}
 .freeitem:hover{border-color:var(--kraft);background:var(--kraft-soft)}
 .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--ink),#3a3a36);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
 .freeitem b{font-size:14.5px}
+.pin-input{width:100%;text-align:center;font-size:26px;letter-spacing:12px;padding:12px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:#fff;font-family:inherit;outline:none}
+.pin-input:focus{border-color:var(--ink)}
 .setup-link{margin-top:20px;font-size:12px;color:var(--muted-2);text-decoration:underline;cursor:pointer}
 
 /* ---------- App shell ---------- */
@@ -285,9 +287,13 @@ label.fotobtn input{display:none}
   <img class="login-logo-sub" src="assets/scriba_logo_dark.png" alt="Scriba S.A.S.">
   <div class="login-tag">App comercial</div>
   <div class="login-card">
-    <h2 id="login-title">¿Quién eres?</h2>
-    <p>Elige tu nombre para ver tus clientes, pedidos y comisión.</p>
-    <div class="freelist" id="freelist"><div class="skeleton" style="height:52px;margin-bottom:8px"></div><div class="skeleton" style="height:52px"></div></div>
+    <h2 id="login-title">Ingresa con tu código</h2>
+    <p>Escribe tu código personal para ver tus clientes, pedidos y comisión.</p>
+    <div id="freelist"><div class="skeleton" style="height:52px"></div></div>
+    <form id="pin-form" class="hidden" onsubmit="entrarConPin(event)" autocomplete="off">
+      <input id="pin-input" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="••••" aria-label="Código personal">
+      <button class="btn primary block" id="pin-btn" type="submit" style="margin-top:12px">Entrar</button>
+    </form>
     <div class="setup-link" onclick="openAdminLogin()">Acceso administradora</div>
     <div class="setup-link" style="margin-top:8px" onclick="openSettings()">Configurar conexión</div>
   </div>
@@ -480,7 +486,7 @@ label.fotobtn input{display:none}
   <input id="set-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
   <div class="hint" style="font-size:12px;color:var(--muted);margin-top:6px">La obtienes al publicar el Code.gs como "Web app" desde Google Sheets → Extensiones → Apps Script.</div>
   <button class="btn primary block" style="margin-top:14px" onclick="saveSettings()">Guardar</button>
-  <button class="btn ghost block ok" style="margin-top:8px" onclick="cambiarUsuario()">Cambiar de usuario</button>
+  <button class="btn ghost block ok" style="margin-top:8px" onclick="cambiarUsuario()">Cerrar sesión</button>
 </div></div>
 
 <div class="overlay" id="ov-cliente360"><div class="sheet" style="max-height:88vh">

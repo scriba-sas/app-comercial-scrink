@@ -1,4 +1,4 @@
-const CACHE = 'scrink-app-v3';
+const CACHE = 'scrink-app-v4';
 const SHELL = ['./index.html', './app.js', './manifest.json', './assets/logo_scrink_dark.png', './assets/logo_scrink_light.png', './assets/scriba_logo_dark.png', './assets/scriba_logo_light.png', './assets/marcador_w45.png'];
 
 self.addEventListener('install', (e) => {

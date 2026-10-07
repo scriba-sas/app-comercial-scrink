@@ -17,6 +17,7 @@ const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbz9pZsi4p_aHne5
 const STATE = {
   apiUrl: localStorage.getItem('scrink_api_url') || DEFAULT_API_URL,
   freelance: localStorage.getItem('scrink_freelance') || '',
+  pin: localStorage.getItem('scrink_pin') || '',
   catalogos: { general: [], especial: [] },
   listaPorTipo: {},
   listas: { canales: [], estados: [], productos: [] },
@@ -68,14 +69,14 @@ function saveSettings(){
   toast('Conexión guardada', 'ok');
   boot();
 }
-function cambiarUsuario(){ localStorage.removeItem('scrink_freelance'); location.reload(); }
+function cambiarUsuario(){ localStorage.removeItem('scrink_freelance'); localStorage.removeItem('scrink_pin'); location.reload(); }
 
 // ---------------------------------------------------------------------
 // API
 // ---------------------------------------------------------------------
 async function apiGet(action, params){
   if (!STATE.apiUrl) throw new Error('NO_API_URL');
-  const qs = new URLSearchParams(Object.assign({ action }, params || {}));
+  const qs = new URLSearchParams(Object.assign({ action, pin: STATE.pin }, params || {}));
   const res = await fetch(STATE.apiUrl + '?' + qs.toString());
   const data = await res.json();
   if (data.error) throw new Error(data.error);
@@ -83,12 +84,12 @@ async function apiGet(action, params){
 }
 async function apiPost(action, body){
   if (!STATE.apiUrl) throw new Error('NO_API_URL');
-  const res = await fetch(STATE.apiUrl, { method: 'POST', body: JSON.stringify(Object.assign({ action }, body || {})) });
+  const res = await fetch(STATE.apiUrl, { method: 'POST', body: JSON.stringify(Object.assign({ action, pin: STATE.pin }, body || {})) });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   return data;
 }
-function errMsg(err){ return String((err && err.message) || err); }
+function errMsg(err){ return String((err && err.message) || err).replace(/^Error:\s*/, ''); }
 
 // ---------------------------------------------------------------------
 // Arranque / login
@@ -104,26 +105,51 @@ async function boot(){
     STATE.listaPorTipo = data.listaPorTipo || {};
     STATE.listas = data.listas || STATE.listas;
     STATE.comision = Object.assign(STATE.comision, data.comision || {});
-    STATE.freelist = data.freelance || [];
-    if (STATE.freelance && STATE.freelist.includes(STATE.freelance)) enterApp(); else renderFreelist();
   } catch (err){
     byId('freelist').innerHTML = '<div class="empty"><div class="ic">⚠️</div><b>No se pudo conectar</b><span>' + escapeHtml(errMsg(err)) + '</span></div>';
-  }
-}
-function renderFreelist(){
-  const box = byId('freelist');
-  if (!STATE.freelist.length){
-    box.innerHTML = '<div class="empty"><div class="ic">👤</div><b>Sin freelance configurados</b><span>Agrega los nombres en la hoja "Instructivo y listas", columna G.</span></div>';
     return;
   }
-  box.innerHTML = '';
-  STATE.freelist.forEach(name => {
-    const el = document.createElement('div');
-    el.className = 'freeitem';
-    el.innerHTML = '<div class="avatar">' + initials(name) + '</div><b>' + escapeHtml(name) + '</b>';
-    el.onclick = () => { STATE.freelance = name; localStorage.setItem('scrink_freelance', name); enterApp(); };
-    box.appendChild(el);
-  });
+  // Sesión guardada en este celular: se revalida el código (por si fue cambiado o retirado)
+  if (STATE.pin){
+    try {
+      const r = await apiGet('login');
+      STATE.freelance = r.nombre;
+      localStorage.setItem('scrink_freelance', r.nombre);
+      enterApp();
+      return;
+    } catch (err){
+      if (/código incorrecto/i.test(errMsg(err))){ STATE.pin = ''; localStorage.removeItem('scrink_pin'); localStorage.removeItem('scrink_freelance'); }
+      else if (STATE.freelance){ enterApp(); return; }   // sin conexión: entra con la sesión guardada
+    }
+  }
+  renderLogin();
+}
+function renderLogin(){
+  byId('freelist').innerHTML = '';
+  byId('pin-form').classList.remove('hidden');
+  setTimeout(() => byId('pin-input').focus(), 200);
+}
+async function entrarConPin(ev){
+  ev.preventDefault();
+  const pin = byId('pin-input').value.trim();
+  if (pin.length < 4){ toast('El código tiene entre 4 y 6 números', 'err'); return; }
+  const btn = byId('pin-btn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  STATE.pin = pin;
+  try {
+    const r = await apiGet('login');
+    STATE.freelance = r.nombre;
+    localStorage.setItem('scrink_pin', pin);
+    localStorage.setItem('scrink_freelance', r.nombre);
+    toast('¡Hola, ' + firstName(r.nombre) + '!', 'ok');
+    enterApp();
+  } catch (err){
+    STATE.pin = '';
+    byId('pin-input').value = '';
+    toast(errMsg(err), 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
 }
 function enterApp(){
   byId('view-login').classList.add('hidden');
@@ -383,7 +409,10 @@ function buscarClienteVisita(){
     try {
       const d = await apiGet('buscarCliente', { telefono: tel });
       STATE.visitaCliente = d.cliente;
-      if (d.cliente){
+      if (d.otroAsesor){
+        byId('vis-found').textContent = '⚠ Este cliente ya está registrado con otro asesor';
+        byId('vis-nuevo').classList.add('hidden');
+      } else if (d.cliente){
         byId('vis-found').textContent = '✓ ' + d.cliente.cliente + (d.cliente.ciudad ? ' · ' + d.cliente.ciudad : '');
         byId('vis-nuevo').classList.add('hidden');
       } else {
@@ -542,6 +571,7 @@ function lookupCliente(){
     try {
       const d = await apiGet('buscarCliente', { telefono: tel });
       const c = d.cliente;
+      if (d.otroAsesor){ toast('Este cliente ya está registrado con otro asesor', 'err'); return; }
       if (c){
         byId('q-cliente').value = c.cliente || '';
         byId('q-contacto').value = c.contacto || '';
