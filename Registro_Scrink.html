@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de cliente · scrink</title>
+<style>
+:root{
+  --ink:#1D1D1B; --paper:#fff; --kraft:#C8A97E; --kraft-soft:#F3ECE0; --kraft-line:#e3d6bf; --kraft-deep:#9c8054;
+  --green:#009640; --muted:#8a8275; --line:#e7ded0; --bg:#f7f1e6;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:Arial,Helvetica,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45;padding:0 0 96px}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+header{background:var(--ink);border-bottom:4px solid var(--kraft);padding:22px 18px}
+.hbar{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.lock{display:flex;flex-direction:column;gap:8px;min-width:0}
+.scrinklogo{height:50px;width:auto;max-width:200px;object-fit:contain;display:block}
+.wlogo{color:#fff;font-weight:bold;font-size:30px;line-height:1}
+.by{display:flex;align-items:center;gap:7px;color:#cfc8bb;font-size:11px}
+.scribalogo{height:19px;width:auto;object-fit:contain;display:block}
+.wby{color:#fff;font-weight:bold;font-style:italic;font-size:13px}
+.pill{background:var(--kraft-soft);border:1px solid var(--kraft);color:var(--kraft-deep);font-size:11px;font-weight:bold;letter-spacing:1px;padding:7px 14px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+
+.intro{margin:16px 0 0;color:#5a554c;font-size:15px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--kraft-deep);margin:20px 0 10px;font-weight:bold;display:flex;align-items:center;gap:10px}
+h2:before{content:"";width:22px;height:3px;background:var(--kraft);border-radius:2px;display:inline-block}
+.card{background:var(--paper);border:1px solid var(--kraft-line);border-radius:14px;padding:16px;margin-bottom:8px;border-top:4px solid var(--kraft)}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 3px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fffdfa;border:1px solid var(--kraft-line);border-radius:10px;padding:11px 12px;outline:none}
+input:focus,select:focus{border-color:var(--kraft-deep);background:#fff}
+.doc{display:flex;gap:10px}
+.doc select{flex:0 0 38%}
+.req{color:var(--kraft-deep)}
+.chk{display:flex;align-items:flex-start;gap:10px;margin-top:14px;font-size:14px;color:var(--ink);line-height:1.35}
+.chk input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--kraft-deep)}
+.chk.small{font-size:13px;color:#5a554c}
+.legal{font-size:11px;color:var(--muted);margin-top:10px;border-top:1px dashed var(--kraft-line);padding-top:8px}
+.trust{font-size:13px;line-height:1.7;color:#5a554c}
+.trust b{color:var(--ink);font-size:14px}
+.trust .k{color:var(--kraft-deep);font-weight:bold}
+.err{background:#fff4f4;border:1px solid #f3c2c2;color:#a12020;font-size:13px;border-radius:10px;padding:9px 11px;margin-top:10px;display:none}
+.err.on{display:block}
+.ok{background:#eef8f0;border:1px solid #bfe3c7;color:#1d6b33;font-size:13px;border-radius:10px;padding:9px 11px;margin-top:10px;display:none}
+.ok.on{display:block}
+.actions{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--kraft-line);padding:10px 14px;display:flex;gap:10px;max-width:520px;margin:0 auto}
+.btn{flex:1;font-family:inherit;font-size:15px;font-weight:bold;border-radius:12px;padding:14px;cursor:pointer;border:1px solid var(--kraft-deep);background:#fff;color:var(--kraft-deep)}
+.btn.primary{flex:1.4;background:var(--green);border-color:var(--green);color:#fff}
+.btn:active{transform:scale(.98)}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin:16px 0 0}
+.foot b{color:var(--kraft-deep)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbar">
+    <span class="lock">
+      <img class="scrinklogo" src="assets/logo_scrink_light.png" alt="scrink"
+        onerror="this.outerHTML='<span class=\'wlogo\'>scrink</span>'">
+      <span class="by">una marca de
+        <img class="scribalogo" src="assets/scriba_logo_light.png" alt="scriba s.a.s"
+          onerror="this.outerHTML='<span class=\'wby\'>scriba s.a.s</span>'">
+      </span>
+    </span>
+    <span class="pill">Registro de cliente</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="intro">Déjanos tus datos para tu pedido y envío.</p>
+
+  <h2>Tus datos</h2>
+  <div class="card">
+    <label>Nombre completo o razón social <span class="req">*</span></label>
+    <input id="nombre" placeholder="Nombre o empresa">
+
+    <label>Documento <span class="req">*</span></label>
+    <div class="doc">
+      <select id="tipoDoc">
+        <option>C.C.</option><option>NIT</option><option>C.E.</option><option>Pasaporte</option>
+      </select>
+      <input id="doc" inputmode="numeric" placeholder="Número">
+    </div>
+
+    <label>Celular <span class="req">*</span></label>
+    <input id="cel" inputmode="tel" placeholder="Celular">
+
+    <label>Correo electrónico</label>
+    <input id="correo" inputmode="email" placeholder="Para confirmación y notificaciones">
+
+    <label>Ciudad <span class="req">*</span></label>
+    <input id="ciudad" placeholder="Ciudad">
+
+    <label>Dirección de envío <span class="req">*</span></label>
+    <input id="dir" placeholder="Barrio y dirección">
+  </div>
+
+  <h2>Autorización</h2>
+  <div class="card">
+    <div class="chk">
+      <input type="checkbox" id="auth">
+      <span>Autorizo a Scriba S.A.S. a usar mis datos para gestionar mi pedido, conforme a la Ley 1581 de 2012. <span class="req">*</span></span>
+    </div>
+    <div class="chk small">
+      <input type="checkbox" id="promos">
+      <span>Quiero recibir novedades y promociones de scrink.</span>
+    </div>
+    <div class="legal">Puedes pedir la actualización o eliminación de tus datos cuando quieras.</div>
+  </div>
+
+  <div class="err" id="err"></div>
+  <div class="ok" id="ok">¡Gracias! Se abrió WhatsApp con tus datos. Solo presiona enviar para completar tu registro.</div>
+
+  <h2>Quiénes somos</h2>
+  <div class="card trust">
+    <b>Scriba S.A.S.</b> · <span class="k">NIT 902.014.588</span><br>
+    Empresa colombiana de marcadores borrables y tintas de recarga, marca <b>scrink</b>.<br>
+    Cra. 47 # 64A-163, Bodega 18 · Parque Empresarial · Rionegro (Antioquia)<br>
+    WhatsApp +57 311 770 9046 · scrink.com.co · Instagram @scriba_sas
+  </div>
+
+  <div class="foot"><b>scrink</b> · una marca de Scriba S.A.S. · Sostenibilidad e identidad</div>
+</div>
+
+<div class="actions">
+  <button class="btn" onclick="copiar()">Copiar</button>
+  <button class="btn primary" onclick="enviar()">Enviar por WhatsApp</button>
+</div>
+
+<script>
+var DEST="573117709046";
+function val(id){return (document.getElementById(id).value||"").trim();}
+function arma(){
+  var promos=document.getElementById("promos").checked?"Sí":"No";
+  var lines=[
+    "Registro de cliente scrink",
+    "Nombre/Razón social: "+val("nombre"),
+    "Documento: "+document.getElementById("tipoDoc").value+" "+val("doc"),
+    "Celular: "+val("cel"),
+    "Correo: "+(val("correo")||"-"),
+    "Ciudad: "+val("ciudad"),
+    "Dirección: "+val("dir"),
+    "Promociones: "+promos,
+    "Autorizo el uso de mis datos (Ley 1581)."
+  ];
+  return lines.join("\n");
+}
+function valida(){
+  var faltan=[];
+  if(!val("nombre"))faltan.push("nombre o razón social");
+  if(!val("doc"))faltan.push("número de documento");
+  if(!val("cel"))faltan.push("celular");
+  if(!val("ciudad"))faltan.push("ciudad");
+  if(!val("dir"))faltan.push("dirección");
+  var e=document.getElementById("err"); document.getElementById("ok").className="ok";
+  if(faltan.length){ e.textContent="Falta completar: "+faltan.join(", ")+"."; e.className="err on"; return false; }
+  if(!document.getElementById("auth").checked){ e.textContent="Para continuar debes autorizar el uso de tus datos."; e.className="err on"; return false; }
+  e.className="err"; return true;
+}
+function enviar(){
+  if(!valida())return;
+  var msg=encodeURIComponent(arma());
+  document.getElementById("ok").className="ok on";
+  window.open("https://wa.me/"+DEST+"?text="+msg,"_blank");
+}
+function copiar(){
+  if(!valida())return;
+  var t=arma();
+  if(navigator.clipboard){ navigator.clipboard.writeText(t); }
+  var e=document.getElementById("err"); e.textContent=""; e.className="err";
+  var ok=document.getElementById("ok"); ok.textContent="Datos copiados. Pégalos donde quieras enviarlos."; ok.className="ok on";
+}
+
+var EXTS=["png","jpg","jpeg","webp","PNG","JPG","JPEG"];
+function loadInto(el){
+  var base=el.getAttribute("data-base"), i=0;
+  function tryNext(){
+    if(i>=EXTS.length)return;
+    var im=new Image();
+    im.onload=function(){ im.className="lockimg"; im.alt="scrink · una marca de scriba s.a.s";
+      el.querySelector(".wtext").style.display="none"; el.querySelector(".umd").style.display="none"; el.insertBefore(im, el.firstChild); };
+    im.onerror=function(){ i++; tryNext(); };
+    im.src="fotos/"+base+"."+EXTS[i];
+  }
+  tryNext();
+}
+document.querySelectorAll('[data-kind="lock"]').forEach(loadInto);
+</script>
+</body>
+</html>
