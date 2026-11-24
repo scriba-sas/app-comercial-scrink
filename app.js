@@ -580,6 +580,7 @@ function resetCotizador(){
   byId('q-editbar').classList.add('hidden');
   ['q-tel','q-cliente','q-contacto','q-ciudad','q-zona','q-correo'].forEach(id => byId(id).value = '');
   byId('q-desc').value = 0;
+  byId('q-flete').value = '';
   byId('q-tipo').selectedIndex = 0;
   byId('q-pago').selectedIndex = 0;
   byId('q-qty').value = 1;
@@ -625,6 +626,7 @@ async function editarPedido(folio){
              precio: it.precio || (c ? c.precio : 0) };
   }).filter(it => it.precio > 0);
   byId('q-desc').value = p.descPct;
+  byId('q-flete').value = p.flete || '';
   if (p.formaPago && Array.from(byId('q-pago').options).some(o => o.value === p.formaPago)) byId('q-pago').value = p.formaPago;
   STATE.folio = p.folio;
   STATE.editFolio = p.folio;
@@ -723,13 +725,19 @@ function calc(){
   let dp = parseFloat(byId('q-desc').value) || 0;
   if (dp < 0) dp = 0; if (dp > 100) dp = 100;
   const descV = sub * dp / 100, base = sub - descV, iv = base * iva(), tot = base + iv;
+  // Flete: se cobra aparte, después del total de la factura (sin IVA, no afecta saldos ni comisiones)
+  const flete = Math.max(0, Math.round(parseFloat(byId('q-flete').value) || 0)), totPagar = Math.round(tot) + flete;
   byId('q-tSub').textContent = money(sub);
   byId('q-tDpct').textContent = dp;
   byId('q-tDesc').textContent = '-' + money(descV);
   byId('q-tBase').textContent = money(base);
   byId('q-tIva').textContent = money(iv);
   byId('q-tTot').textContent = money(tot);
-  return { sub, dp, descV, base, iva: iv, tot };
+  byId('q-tFleteRow').classList.toggle('hidden', !flete);
+  byId('q-tPagarRow').classList.toggle('hidden', !flete);
+  byId('q-tFlete').textContent = money(flete);
+  byId('q-tPagar').textContent = money(totPagar);
+  return { sub, dp, descV, base, iva: iv, tot, flete, totPagar };
 }
 
 async function guardarEdicion(){
@@ -740,7 +748,7 @@ async function guardarEdicion(){
   const btn = byId('q-btnGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
   try {
     const res = await apiPost('editarPedido', {
-      folio: STATE.editFolio, items: STATE.items, subtotal: t.sub, descuentoPct: t.dp, formaPago: byId('q-pago').value
+      folio: STATE.editFolio, items: STATE.items, subtotal: t.sub, descuentoPct: t.dp, flete: t.flete, formaPago: byId('q-pago').value
     });
     STATE.saved = true;
     btn.textContent = 'Guardado ✓';
@@ -765,7 +773,7 @@ async function guardarPedido(){
     telefono: tel, cliente: byId('q-cliente').value.trim(), contacto: byId('q-contacto').value.trim(),
     ciudad: byId('q-ciudad').value.trim(), tipoCliente: byId('q-tipo').value, zona: byId('q-zona').value.trim(),
     correo: byId('q-correo').value.trim(), freelance: STATE.freelance, items: STATE.items,
-    subtotal: t.sub, descuentoPct: t.dp, formaPago: byId('q-pago').value, folio: STATE.folio
+    subtotal: t.sub, descuentoPct: t.dp, flete: t.flete, formaPago: byId('q-pago').value, folio: STATE.folio
   };
   STATE.saving = true;
   const btn = byId('q-btnGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
@@ -798,7 +806,9 @@ function enviarWhatsApp(){
     (arr.length ? arr.join('\n') + '\n' : '') +
     'Subtotal: ' + money(t.sub) + '\n' +
     (t.dp > 0 ? 'Descuento ' + t.dp + '%: -' + money(t.descV) + '\n' : '') +
-    'IVA 19%: ' + money(t.iva) + '\n' + 'TOTAL: ' + money(t.tot) + '\n\n' + 'scrink · Sostenibilidad e identidad';
+    'IVA 19%: ' + money(t.iva) + '\n' + (t.flete > 0 ? 'TOTAL FACTURA: ' : 'TOTAL: ') + money(t.tot) + '\n' +
+    (t.flete > 0 ? 'Flete / despacho: ' + money(t.flete) + '\n' + 'TOTAL A PAGAR: ' + money(t.totPagar) + '\n' : '') +
+    '\n' + 'scrink · Sostenibilidad e identidad';
   const tel = (byId('q-tel').value || '').replace(/\D/g, '');
   const dest = tel.length === 10 ? '57' + tel : (tel.length === 12 && tel.indexOf('57') === 0 ? tel : '');
   window.open('https://wa.me/' + dest + '?text=' + encodeURIComponent(msg), '_blank');
@@ -892,13 +902,34 @@ async function descargarPDF(){
   doc.setDrawColor(KRAFT[0],KRAFT[1],KRAFT[2]); doc.setLineWidth(1.2);
   doc.line(tx, ty-4, W-40, ty-4);
   ty += 4;
-  totLine('TOTAL', money(t.tot), true);
+  totLine(t.flete > 0 ? 'TOTAL FACTURA' : 'TOTAL', money(t.tot), true);
+  if (t.flete > 0){
+    ty += 2;
+    totLine('Flete / despacho (aparte)', money(t.flete));
+    doc.setLineWidth(0.7); doc.line(tx, ty-4, W-40, ty-4); ty += 4;
+    totLine('TOTAL A PAGAR', money(t.totPagar), true);
+  }
 
   ty += 26;
   doc.setFontSize(8.5); doc.setTextColor(MUTED[0],MUTED[1],MUTED[2]); doc.setFont('helvetica','normal');
   const cond = 'Forma de pago: ' + byId('q-pago').value + '. Validez de la oferta: 15 días. Precios en pesos colombianos. ' +
     'Oferta de lanzamiento: 1 caja x10 de muestra por cada 10 cajas compradas.';
-  doc.text(doc.splitTextToSize(cond, W-80), 40, ty);
+  const condLines = doc.splitTextToSize(cond, W-80);
+  doc.text(condLines, 40, ty);
+  ty += condLines.length * 11 + 10;
+
+  // Nota: datos para consignar (con logo de Scriba)
+  if (ty + 66 + 80 > H - 30){ doc.addPage(); ty = 50; }
+  doc.setFillColor(250,247,241); doc.setDrawColor(230,224,209); doc.setLineWidth(0.7);
+  doc.roundedRect(40, ty, W-80, 64, 6, 6, 'FD');
+  doc.setFillColor(KRAFT[0],KRAFT[1],KRAFT[2]); doc.rect(40, ty+6, 3, 52, 'F');
+  try { const sl = await imgToDataURL('assets/scriba_logo_dark.png'); doc.addImage(sl, 'PNG', 58, ty+25, 78, 14.3); } catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(INK[0],INK[1],INK[2]);
+  doc.text('Información para consignar', 170, ty+21);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  doc.text('Cuenta de ahorros Bancolombia N° 41500003043', 170, ty+37);
+  doc.text('A nombre de Scriba S.A.S.  ·  NIT 902.014.588', 170, ty+51);
+  ty += 64;
 
   ty += 46;
   doc.setDrawColor(210,205,192);

@@ -434,6 +434,7 @@ label.fotobtn input{display:none}
         <div><label>Descuento (%)</label><input id="q-desc" type="number" min="0" max="100" value="0" oninput="calc()"></div>
         <div><label>Forma de pago</label><select id="q-pago"><option>Contado</option><option>Anticipo 50%</option><option>Crédito (por aprobar)</option></select></div>
       </div>
+      <div style="margin-top:10px"><label>Flete / despacho (opcional)</label><input id="q-flete" type="number" min="0" inputmode="numeric" placeholder="$0" oninput="calc()"><div class="hint" style="font-size:11.5px;color:var(--muted);margin-top:4px">Se suma después del total de la factura. No lleva IVA y no afecta saldos ni comisiones.</div></div>
     </div>
 
     <div class="totbox">
@@ -441,7 +442,9 @@ label.fotobtn input{display:none}
       <div class="tline"><span>Descuento (<span id="q-tDpct">0</span>%)</span><span id="q-tDesc">-$0</span></div>
       <div class="tline"><span>Base gravable</span><span id="q-tBase">$0</span></div>
       <div class="tline"><span>IVA 19%</span><span id="q-tIva">$0</span></div>
-      <div class="tline big"><span class="k">Total</span><span id="q-tTot">$0</span></div>
+      <div class="tline big"><span class="k">Total factura</span><span id="q-tTot">$0</span></div>
+      <div class="tline hidden" id="q-tFleteRow"><span>Flete / despacho (aparte de la factura)</span><span id="q-tFlete">$0</span></div>
+      <div class="tline big hidden" id="q-tPagarRow"><span class="k">Total a pagar</span><span id="q-tPagar">$0</span></div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
