@@ -5,8 +5,11 @@ const COLC = { Negro:'#1D1D1B', Rojo:'#E30613', Azul:'#0069B4', Verde:'#009640' 
 const DESC_TIPO = { 'Minorista':10, 'Distribuidor mayorista':15, 'Institución Educativa':0, 'Empresa':0, 'Usuario final':0 };
 const FAMILIAS = [
   { key:'W45', label:'Marcador borrable scrink W45', refs:['W45'] },
-  { key:'tinta', label:'Tinta de recarga scrink', refs:['W30','W100','W500'] }
+  { key:'tinta', label:'Tinta de recarga scrink', refs:['W30','W100','W500'] },
+  // Edición especial: solo se ofrece con la lista especial (usuario final / instituciones) y no tiene colores para elegir
+  { key:'W45C', label:'Marcador borrable scrink W45 Cattleya (EE)', refs:['W45C'], lista:'especial', sinColor:true }
 ];
+const COLOR_EE = { Cattleya:'#B5338A' };
 const ESTADOS_PEDIDO = ['Cotizado','Pedido confirmado','Despachado','Recibido por cliente','Facturado','Cobrado','Cancelado'];
 const LISTA_LABEL = { general: 'Lista general', especial: 'Lista instituciones / usuario final' };
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -527,8 +530,15 @@ function actualizarListaBadge(){
   badge.style.background = key === 'especial' ? 'var(--kraft-dark)' : 'var(--kraft-soft)';
   badge.style.color = key === 'especial' ? '#fff' : 'var(--kraft-dark)';
 }
+/** Muestra solo los productos que aplican a la lista de precios del cliente (la edición especial es solo lista especial). */
+function refrescarFamilias(){
+  const sel = byId('q-fam'), prev = sel.value, lista = currentListKey();
+  const fams = FAMILIAS.filter(f => !f.lista || f.lista === lista);
+  sel.innerHTML = fams.map(f => '<option value="' + f.key + '">' + f.label + '</option>').join('');
+  if (fams.some(f => f.key === prev)) sel.value = prev;
+}
 function buildProductSelect(){
-  byId('q-fam').innerHTML = FAMILIAS.map(f => '<option value="' + f.key + '">' + f.label + '</option>').join('');
+  refrescarFamilias();
   onFamChange();
   actualizarListaBadge();
   byId('q-colores').innerHTML = Object.keys(COLC).map((c,i) =>
@@ -545,6 +555,7 @@ function onFamChange(){
   const fam = FAMILIAS.find(f => f.key === byId('q-fam').value);
   const presWrap = byId('q-presWrap');
   const cat = currentCatalogoByRef();
+  byId('q-colores').parentElement.classList.toggle('hidden', !!fam.sinColor);
   if (fam.refs.length > 1){
     presWrap.classList.remove('hidden');
     byId('q-pres').innerHTML = fam.refs.map(r => {
@@ -606,6 +617,7 @@ async function editarPedido(folio){
       if (c.tipo && Array.from(sel.options).some(o => o.value === c.tipo)) sel.value = c.tipo;
     }
   } catch (e) { /* sin datos extra del cliente: la lista de precios queda en la general */ }
+  refrescarFamilias();
   onFamChange();
   actualizarListaBadge();
   const cat = currentCatalogoByRef();
@@ -662,10 +674,14 @@ function lookupCliente(){
 }
 function aplicaDescTipo(){
   byId('q-desc').value = DESC_TIPO[byId('q-tipo').value] || 0;
+  refrescarFamilias();
   onFamChange();
   actualizarListaBadge();
   if (STATE.items.length){
     const cat = currentCatalogoByRef();
+    const antes = STATE.items.length;
+    STATE.items = STATE.items.filter(l => cat[l.ref]);      // productos que esta lista no ofrece (edición especial)
+    if (STATE.items.length < antes) toast('Se quitó un producto que no aplica a este tipo de cliente', 'err');
     let cambio = false;
     STATE.items.forEach(l => { const p = cat[l.ref]; if (p && p.precio !== l.precio){ l.precio = p.precio; cambio = true; } });
     if (cambio) toast('Precios actualizados a la ' + LISTA_LABEL[currentListKey()].toLowerCase(), 'ok');
@@ -677,7 +693,7 @@ function addLine(){
   const fam = FAMILIAS.find(f => f.key === byId('q-fam').value);
   const ref = fam.refs.length > 1 ? byId('q-pres').value : fam.refs[0];
   const chip = document.querySelector('#q-colores .chip.on');
-  const color = chip ? chip.dataset.color : 'Negro';
+  const color = fam.sinColor ? 'Cattleya' : (chip ? chip.dataset.color : 'Negro');
   let qty = parseInt(byId('q-qty').value) || 1;
   if (qty < 1) qty = 1;
   const cat = currentCatalogoByRef()[ref];
@@ -697,7 +713,7 @@ function renderItems(){
     calc(); return;
   }
   box.innerHTML = STATE.items.map((l,i) =>
-    '<div class="line-item"><span class="dot" style="background:' + (COLC[l.color]||'#333') + '"></span>' +
+    '<div class="line-item"><span class="dot" style="background:' + (COLC[l.color]||COLOR_EE[l.color]||'#333') + '"></span>' +
     '<div class="li-main"><b>' + l.nombre + '</b><span>' + l.color + ' · ' + l.pres + '</span></div>' +
     '<input class="li-qty" type="number" min="1" value="' + l.qty + '" oninput="setQty(' + i + ',this.value)">' +
     '<span class="li-tot" id="lt_' + i + '">' + money(l.qty * l.precio) + '</span>' +
